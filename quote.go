@@ -1,32 +1,35 @@
 package velafi
 
-import "context"
+import (
+	"context"
+	"strconv"
+)
 
-func (c *Client) GetCryptoFiatQuote(ctx context.Context, params *CryptoFiatQuoteParams) (*Quote, error) {
-	path := "/v1/quotes/crypto-fiat" + buildQuery(map[string]string{
-		"merchantId":      params.MerchantID,
-		"fromCurrency":    params.FromCurrency,
-		"toCurrency":      params.ToCurrency,
-		"fromAmount":      params.FromAmount,
-		"toAmount":        params.ToAmount,
-		"paymentMethodId": params.PaymentMethodID,
-	})
+func (c *Client) GetCryptoQuote(ctx context.Context, params *CryptoQuoteParams) (*Quote, error) {
+	q := map[string]string{
+		"country": params.Country,
+		"from":    params.From,
+		"to":      params.To,
+	}
+	if params.CreateQuoteID {
+		q["createQuoteId"] = strconv.FormatBool(params.CreateQuoteID)
+	}
 	var result Quote
-	err := c.get(ctx, path, &result)
+	err := c.get(ctx, "/v2/user/crypto-quote"+buildQuery(q), &result)
 	return &result, err
 }
 
-func (c *Client) GetFiatFiatQuote(ctx context.Context, params *FiatFiatQuoteParams) (*Quote, error) {
-	path := "/v1/quotes/fiat-fiat" + buildQuery(map[string]string{
-		"merchantId":          params.MerchantID,
-		"fromCurrency":        params.FromCurrency,
-		"toCurrency":          params.ToCurrency,
-		"fromAmount":          params.FromAmount,
-		"toAmount":            params.ToAmount,
-		"fromPaymentMethodId": params.FromPaymentMethodID,
-		"toPaymentMethodId":   params.ToPaymentMethodID,
-	})
+func (c *Client) GetFiatQuote(ctx context.Context, params *FiatQuoteParams) (*Quote, error) {
+	q := map[string]string{
+		"onRampCountry":  params.OnRampCountry,
+		"onRampFiat":     params.OnRampFiat,
+		"offRampCountry": params.OffRampCountry,
+		"offRampFiat":    params.OffRampFiat,
+	}
+	if params.CreateQuoteID {
+		q["createQuoteId"] = strconv.FormatBool(params.CreateQuoteID)
+	}
 	var result Quote
-	err := c.get(ctx, path, &result)
+	err := c.get(ctx, "/v2/user/fiat-quote"+buildQuery(q), &result)
 	return &result, err
 }

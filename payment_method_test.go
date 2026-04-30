@@ -7,137 +7,209 @@ import (
 	"testing"
 )
 
-func TestListPaymentTemplates(t *testing.T) {
+func TestGetPaymentTemplate(t *testing.T) {
 	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/v1/payment-templates" {
-			t.Errorf("path = %q", r.URL.Path)
+		if r.URL.Path != "/v2/payments/templates" {
+			t.Errorf("path = %q, want /v2/payments/templates", r.URL.Path)
+		}
+		if r.URL.Query().Get("paymentId") != "1" {
+			t.Errorf("paymentId = %q, want 1", r.URL.Query().Get("paymentId"))
 		}
 		json.NewEncoder(w).Encode(map[string]any{
-			"code": 0, "message": "success",
-			"data": []map[string]any{{
-				"templateId": "tpl-1", "name": "Bank Transfer", "currency": "USD", "country": "US", "type": "bank",
-				"fields": []map[string]any{{"key": "accountNumber", "label": "Account Number", "type": "string", "required": true}},
-			}},
+			"code": 200,
+			"msg":  "SUCCESS",
+			"data": map[string]string{
+				"accountNumber": "",
+				"bankName":      "",
+				"routingNumber": "",
+			},
 		})
 	})
 
-	templates, err := c.ListPaymentTemplates(context.Background(), &ListPaymentTemplatesParams{Currency: "USD"})
+	tpl, err := c.GetPaymentTemplate(context.Background(), 1)
 	if err != nil {
 		t.Fatalf("error = %v", err)
 	}
-	if len(templates) != 1 || templates[0].TemplateID != "tpl-1" {
-		t.Errorf("unexpected: %+v", templates)
+	if _, ok := tpl["accountNumber"]; !ok {
+		t.Error("template should contain accountNumber key")
+	}
+	if _, ok := tpl["bankName"]; !ok {
+		t.Error("template should contain bankName key")
 	}
 }
 
-func TestGetPaymentTemplateMetamessage(t *testing.T) {
+func TestGetPaymentTemplateMeta(t *testing.T) {
 	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/v1/payment-templates/tpl-1/metamessage" {
-			t.Errorf("path = %q", r.URL.Path)
+		if r.URL.Path != "/v2/payments/templates/metamessage" {
+			t.Errorf("path = %q, want /v2/payments/templates/metamessage", r.URL.Path)
+		}
+		if r.URL.Query().Get("paymentId") != "1" {
+			t.Errorf("paymentId = %q, want 1", r.URL.Query().Get("paymentId"))
 		}
 		json.NewEncoder(w).Encode(map[string]any{
-			"code": 0, "message": "success",
+			"code": 200,
+			"msg":  "SUCCESS",
 			"data": map[string]any{
-				"templateId": "tpl-1",
-				"metamessage": map[string]any{
-					"fields": []map[string]any{{"key": "accountNumber", "label": "Account Number", "type": "string", "required": true}},
+				"id":          1,
+				"paymentName": "Bank Transfer",
+				"paymentType": 1,
+				"trench":      "local",
+				"fieldList": []map[string]any{
+					{
+						"index":      1,
+						"indexCode":  "accountNumber",
+						"textType":   1,
+						"title":      "Account Number",
+						"promptText": "Enter your account number",
+						"minLimit":   5,
+						"maxLimit":   20,
+						"isOptional": false,
+						"isAccount":  true,
+					},
 				},
 			},
 		})
 	})
 
-	meta, err := c.GetPaymentTemplateMetamessage(context.Background(), "tpl-1")
+	meta, err := c.GetPaymentTemplateMeta(context.Background(), 1)
 	if err != nil {
 		t.Fatalf("error = %v", err)
 	}
-	if meta.TemplateID != "tpl-1" {
-		t.Errorf("TemplateID = %q", meta.TemplateID)
+	if meta.ID != 1 {
+		t.Errorf("ID = %d, want 1", meta.ID)
+	}
+	if meta.PaymentName != "Bank Transfer" {
+		t.Errorf("PaymentName = %q, want %q", meta.PaymentName, "Bank Transfer")
+	}
+	if len(meta.FieldList) != 1 {
+		t.Fatalf("len(FieldList) = %d, want 1", len(meta.FieldList))
+	}
+	if meta.FieldList[0].IndexCode != "accountNumber" {
+		t.Errorf("IndexCode = %q, want %q", meta.FieldList[0].IndexCode, "accountNumber")
 	}
 }
 
 func TestAddPaymentMethod(t *testing.T) {
 	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/v1/payment-methods" {
-			t.Errorf("path = %q", r.URL.Path)
+		if r.URL.Path != "/v2/payments" {
+			t.Errorf("path = %q, want /v2/payments", r.URL.Path)
 		}
 		if r.Method != http.MethodPost {
-			t.Errorf("method = %q", r.Method)
+			t.Errorf("method = %q, want POST", r.Method)
+		}
+		var body map[string]any
+		json.NewDecoder(r.Body).Decode(&body)
+		if body["country"] != "US" {
+			t.Errorf("country = %v, want US", body["country"])
 		}
 		json.NewEncoder(w).Encode(map[string]any{
-			"code": 0, "message": "success",
-			"data": map[string]any{"methodId": "pm-1", "merchantId": "m-1", "templateId": "tpl-1", "status": "active", "fields": map[string]any{}, "createdAt": "2026-04-30T10:00:00Z"},
+			"code": 200,
+			"msg":  "SUCCESS",
+			"data": map[string]any{
+				"id":     101,
+				"status": 1,
+			},
 		})
 	})
 
-	pm, err := c.AddPaymentMethod(context.Background(), &AddPaymentMethodParams{
-		MerchantID: "m-1", TemplateID: "tpl-1", Fields: map[string]any{"accountNumber": "123"},
+	result, err := c.AddPaymentMethod(context.Background(), &AddPaymentMethodParams{
+		MerchantID: 1,
+		PaymentID:  1,
+		Country:    "US",
+		Fiat:       "USD",
+		RealName:   "John Doe",
+		FieldJSON:  map[string]any{"accountNumber": "123456"},
 	})
 	if err != nil {
 		t.Fatalf("error = %v", err)
 	}
-	if pm.MethodID != "pm-1" {
-		t.Errorf("MethodID = %q", pm.MethodID)
+	if result.ID != 101 {
+		t.Errorf("ID = %d, want 101", result.ID)
+	}
+	if result.Status != 1 {
+		t.Errorf("Status = %d, want 1", result.Status)
 	}
 }
 
-func TestGetPaymentMethod(t *testing.T) {
+func TestListPaymentMethods(t *testing.T) {
 	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/v1/payment-methods/pm-1" {
-			t.Errorf("path = %q", r.URL.Path)
+		if r.URL.Path != "/v2/payments" {
+			t.Errorf("path = %q, want /v2/payments", r.URL.Path)
+		}
+		if r.Method != http.MethodGet {
+			t.Errorf("method = %q, want GET", r.Method)
+		}
+		q := r.URL.Query()
+		if q.Get("country") != "US" {
+			t.Errorf("country = %q, want US", q.Get("country"))
+		}
+		if q.Get("fiat") != "USD" {
+			t.Errorf("fiat = %q, want USD", q.Get("fiat"))
 		}
 		json.NewEncoder(w).Encode(map[string]any{
-			"code": 0, "message": "success",
-			"data": map[string]any{"methodId": "pm-1", "merchantId": "m-1", "templateId": "tpl-1", "status": "active", "fields": map[string]any{}, "createdAt": "2026-04-30T10:00:00Z"},
+			"code": 200,
+			"msg":  "SUCCESS",
+			"data": map[string]any{
+				"currentPage": 1,
+				"size":        20,
+				"total":       1,
+				"record": []map[string]any{
+					{
+						"id":                101,
+						"merchantId":        1,
+						"country":           "US",
+						"fiat":              "USD",
+						"paymentId":         1,
+						"paymentMethodName": "Bank Transfer",
+						"realName":          "John Doe",
+						"status":            1,
+						"hasRefundAccount":  0,
+						"fieldList":         map[string]string{"accountNumber": "123456"},
+						"createTime":        1714500000000,
+					},
+				},
+			},
 		})
 	})
 
-	pm, err := c.GetPaymentMethod(context.Background(), "pm-1")
+	list, err := c.ListPaymentMethods(context.Background(), &ListPaymentMethodsParams{
+		Country: "US",
+		Fiat:    "USD",
+	})
 	if err != nil {
 		t.Fatalf("error = %v", err)
 	}
-	if pm.MethodID != "pm-1" {
-		t.Errorf("MethodID = %q", pm.MethodID)
+	if list.Total != 1 {
+		t.Errorf("Total = %d, want 1", list.Total)
+	}
+	if len(list.Record) != 1 {
+		t.Fatalf("len(Record) = %d, want 1", len(list.Record))
+	}
+	if list.Record[0].ID != 101 {
+		t.Errorf("ID = %d, want 101", list.Record[0].ID)
+	}
+	if list.Record[0].PaymentMethodName != "Bank Transfer" {
+		t.Errorf("PaymentMethodName = %q, want %q", list.Record[0].PaymentMethodName, "Bank Transfer")
 	}
 }
 
 func TestDeletePaymentMethod(t *testing.T) {
 	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/v1/payment-methods/pm-1" {
-			t.Errorf("path = %q", r.URL.Path)
+		if r.URL.Path != "/v2/payments/101" {
+			t.Errorf("path = %q, want /v2/payments/101", r.URL.Path)
 		}
 		if r.Method != http.MethodDelete {
-			t.Errorf("method = %q", r.Method)
+			t.Errorf("method = %q, want DELETE", r.Method)
 		}
 		json.NewEncoder(w).Encode(map[string]any{
-			"code": 0, "message": "success", "data": nil,
+			"code": 200,
+			"msg":  "SUCCESS",
+			"data": nil,
 		})
 	})
 
-	err := c.DeletePaymentMethod(context.Background(), "pm-1")
+	err := c.DeletePaymentMethod(context.Background(), 101)
 	if err != nil {
 		t.Fatalf("error = %v", err)
-	}
-}
-
-func TestSetRefundAccount(t *testing.T) {
-	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/v1/payment-methods/pm-1/refund-account" {
-			t.Errorf("path = %q", r.URL.Path)
-		}
-		if r.Method != http.MethodPost {
-			t.Errorf("method = %q", r.Method)
-		}
-		json.NewEncoder(w).Encode(map[string]any{
-			"code": 0, "message": "success",
-			"data": map[string]any{"methodId": "pm-1", "refundMethodId": "pm-2", "updatedAt": "2026-04-30T10:00:00Z"},
-		})
-	})
-
-	result, err := c.SetRefundAccount(context.Background(), "pm-1", "pm-2")
-	if err != nil {
-		t.Fatalf("error = %v", err)
-	}
-	if result.RefundMethodID != "pm-2" {
-		t.Errorf("RefundMethodID = %q", result.RefundMethodID)
 	}
 }

@@ -9,91 +9,94 @@ import (
 
 func TestCreateWebhook(t *testing.T) {
 	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/v1/webhooks" {
-			t.Errorf("path = %q", r.URL.Path)
+		if r.URL.Path != "/v2/webhook" {
+			t.Errorf("path = %q, want /v2/webhook", r.URL.Path)
 		}
 		if r.Method != http.MethodPost {
-			t.Errorf("method = %q", r.Method)
+			t.Errorf("method = %q, want POST", r.Method)
+		}
+		var body map[string]any
+		json.NewDecoder(r.Body).Decode(&body)
+		if body["eventType"] != "order.fiat_crypto.completed" {
+			t.Errorf("eventType = %v, want order.fiat_crypto.completed", body["eventType"])
+		}
+		if body["url"] != "https://example.com/webhook" {
+			t.Errorf("url = %v, want https://example.com/webhook", body["url"])
 		}
 		json.NewEncoder(w).Encode(map[string]any{
-			"code": 0, "message": "success",
+			"code": 200,
+			"msg":  "SUCCESS",
 			"data": map[string]any{
-				"webhookId": "wh-1", "url": "https://example.com/webhook",
-				"events": []string{"order.fiat_crypto.completed"}, "merchantId": "m-1", "status": "active", "createdAt": "2026-04-30T10:00:00Z",
+				"webhookId": "wh-abc-123",
+				"eventType": "order.fiat_crypto.completed",
+				"url":       "https://example.com/webhook",
+				"status":    1,
+				"publicKey": "pk-test-key",
 			},
 		})
 	})
 
 	wh, err := c.CreateWebhook(context.Background(), &CreateWebhookParams{
-		URL: "https://example.com/webhook", Events: []string{"order.fiat_crypto.completed"}, MerchantID: "m-1",
+		EventType: "order.fiat_crypto.completed",
+		URL:       "https://example.com/webhook",
 	})
 	if err != nil {
 		t.Fatalf("error = %v", err)
 	}
-	if wh.WebhookID != "wh-1" {
-		t.Errorf("WebhookID = %q", wh.WebhookID)
+	if wh.WebhookID != "wh-abc-123" {
+		t.Errorf("WebhookID = %q, want %q", wh.WebhookID, "wh-abc-123")
+	}
+	if wh.EventType != "order.fiat_crypto.completed" {
+		t.Errorf("EventType = %q, want %q", wh.EventType, "order.fiat_crypto.completed")
+	}
+	if wh.URL != "https://example.com/webhook" {
+		t.Errorf("URL = %q, want %q", wh.URL, "https://example.com/webhook")
+	}
+	if wh.Status != 1 {
+		t.Errorf("Status = %d, want 1", wh.Status)
+	}
+	if wh.PublicKey != "pk-test-key" {
+		t.Errorf("PublicKey = %q, want %q", wh.PublicKey, "pk-test-key")
 	}
 }
 
 func TestListWebhooks(t *testing.T) {
 	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/v1/webhooks" {
-			t.Errorf("path = %q", r.URL.Path)
+		if r.URL.Path != "/v2/webhooks" {
+			t.Errorf("path = %q, want /v2/webhooks", r.URL.Path)
 		}
-		if r.URL.Query().Get("merchantId") != "m-1" {
-			t.Errorf("merchantId = %q", r.URL.Query().Get("merchantId"))
+		if r.Method != http.MethodGet {
+			t.Errorf("method = %q, want GET", r.Method)
+		}
+		q := r.URL.Query()
+		if q.Get("status") != "1" {
+			t.Errorf("status = %q, want 1", q.Get("status"))
 		}
 		json.NewEncoder(w).Encode(map[string]any{
-			"code": 0, "message": "success",
-			"data": []map[string]any{{"webhookId": "wh-1", "url": "https://example.com/webhook", "events": []string{"order.fiat_crypto.completed"}, "merchantId": "m-1", "status": "active"}},
+			"code": 200,
+			"msg":  "SUCCESS",
+			"data": []map[string]any{
+				{
+					"webhookId": "wh-abc-123",
+					"eventType": "order.fiat_crypto.completed",
+					"url":       "https://example.com/webhook",
+					"status":    1,
+				},
+			},
 		})
 	})
 
-	webhooks, err := c.ListWebhooks(context.Background(), "m-1")
+	webhooks, err := c.ListWebhooks(context.Background(), 1)
 	if err != nil {
 		t.Fatalf("error = %v", err)
 	}
-	if len(webhooks) != 1 || webhooks[0].WebhookID != "wh-1" {
-		t.Errorf("unexpected: %+v", webhooks)
+	if len(webhooks) != 1 {
+		t.Fatalf("len = %d, want 1", len(webhooks))
 	}
-}
-
-func TestUpdateWebhook(t *testing.T) {
-	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/v1/webhooks/wh-1" {
-			t.Errorf("path = %q", r.URL.Path)
-		}
-		if r.Method != http.MethodPut {
-			t.Errorf("method = %q", r.Method)
-		}
-		json.NewEncoder(w).Encode(map[string]any{
-			"code": 0, "message": "success",
-			"data": map[string]any{"webhookId": "wh-1", "url": "https://new.example.com/webhook", "events": []string{"order.fiat_crypto.completed"}, "status": "active", "updatedAt": "2026-04-30T11:00:00Z"},
-		})
-	})
-
-	wh, err := c.UpdateWebhook(context.Background(), "wh-1", &UpdateWebhookParams{URL: "https://new.example.com/webhook"})
-	if err != nil {
-		t.Fatalf("error = %v", err)
+	if webhooks[0].WebhookID != "wh-abc-123" {
+		t.Errorf("WebhookID = %q, want %q", webhooks[0].WebhookID, "wh-abc-123")
 	}
-	if wh.URL != "https://new.example.com/webhook" {
-		t.Errorf("URL = %q", wh.URL)
-	}
-}
-
-func TestDeleteWebhook(t *testing.T) {
-	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/v1/webhooks/wh-1" {
-			t.Errorf("path = %q", r.URL.Path)
-		}
-		if r.Method != http.MethodDelete {
-			t.Errorf("method = %q", r.Method)
-		}
-		json.NewEncoder(w).Encode(map[string]any{"code": 0, "message": "success", "data": nil})
-	})
-
-	err := c.DeleteWebhook(context.Background(), "wh-1")
-	if err != nil {
-		t.Fatalf("error = %v", err)
+	if webhooks[0].EventType != "order.fiat_crypto.completed" {
+		t.Errorf("EventType = %q, want %q", webhooks[0].EventType, "order.fiat_crypto.completed")
 	}
 }

@@ -1,26 +1,22 @@
 package velafi
 
-import "context"
+import (
+	"context"
+	"strconv"
+)
 
 func (c *Client) CreateWebhook(ctx context.Context, params *CreateWebhookParams) (*Webhook, error) {
 	var result Webhook
-	err := c.post(ctx, "/v1/webhooks", params, &result)
+	err := c.post(ctx, "/v2/webhook", params, &result)
 	return &result, err
 }
 
-func (c *Client) ListWebhooks(ctx context.Context, merchantID string) ([]Webhook, error) {
-	path := "/v1/webhooks" + buildQuery(map[string]string{"merchantId": merchantID})
+func (c *Client) ListWebhooks(ctx context.Context, status int) ([]Webhook, error) {
+	q := map[string]string{}
+	if status > 0 {
+		q["status"] = strconv.Itoa(status)
+	}
 	var result []Webhook
-	err := c.get(ctx, path, &result)
+	err := c.get(ctx, "/v2/webhooks"+buildQuery(q), &result)
 	return result, err
-}
-
-func (c *Client) UpdateWebhook(ctx context.Context, webhookID string, params *UpdateWebhookParams) (*Webhook, error) {
-	var result Webhook
-	err := c.put(ctx, "/v1/webhooks/"+webhookID, params, &result)
-	return &result, err
-}
-
-func (c *Client) DeleteWebhook(ctx context.Context, webhookID string) error {
-	return c.delete(ctx, "/v1/webhooks/"+webhookID)
 }

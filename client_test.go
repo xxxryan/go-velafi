@@ -51,9 +51,9 @@ func TestDoJSON_Success(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]any{
-			"code":    0,
-			"message": "success",
-			"data":    map[string]any{"name": "TestCountry"},
+			"code": 200,
+			"msg":  "SUCCESS",
+			"data": map[string]any{"name": "TestCountry"},
 		})
 	}))
 	defer srv.Close()
@@ -65,7 +65,7 @@ func TestDoJSON_Success(t *testing.T) {
 	var result struct {
 		Name string `json:"name"`
 	}
-	err := c.doJSON(context.Background(), http.MethodGet, "/v1/countries", nil, &result)
+	err := c.doJSON(context.Background(), http.MethodGet, "/v2/base/countrys", nil, &result)
 	if err != nil {
 		t.Fatalf("doJSON() error = %v", err)
 	}
@@ -78,8 +78,8 @@ func TestDoJSON_BusinessError(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]any{
-			"code":    10001,
-			"message": "invalid parameter",
+			"code": 10001,
+			"msg":  "invalid parameter",
 		})
 	}))
 	defer srv.Close()
@@ -89,9 +89,9 @@ func TestDoJSON_BusinessError(t *testing.T) {
 	c.expiresAt = time.Now().Add(1 * time.Hour)
 
 	var result any
-	err := c.doJSON(context.Background(), http.MethodGet, "/v1/test", nil, &result)
+	err := c.doJSON(context.Background(), http.MethodGet, "/v2/test", nil, &result)
 	if err == nil {
-		t.Fatal("doJSON() should return error for non-zero code")
+		t.Fatal("doJSON() should return error for non-200 code")
 	}
 	var apiErr *Error
 	if !errors.As(err, &apiErr) {
@@ -109,8 +109,8 @@ func TestDoJSON_HTTPError(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]any{
-			"code":    50000,
-			"message": "internal error",
+			"code": 50000,
+			"msg":  "internal error",
 		})
 	}))
 	defer srv.Close()
@@ -120,7 +120,7 @@ func TestDoJSON_HTTPError(t *testing.T) {
 	c.expiresAt = time.Now().Add(1 * time.Hour)
 
 	var result any
-	err := c.doJSON(context.Background(), http.MethodGet, "/v1/test", nil, &result)
+	err := c.doJSON(context.Background(), http.MethodGet, "/v2/test", nil, &result)
 	if err == nil {
 		t.Fatal("doJSON() should return error for HTTP 500")
 	}

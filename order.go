@@ -5,62 +5,50 @@ import (
 	"strconv"
 )
 
-func (c *Client) CreateFiatCryptoOrder(ctx context.Context, params *CreateFiatCryptoOrderParams) (*Order, error) {
-	var result Order
-	err := c.post(ctx, "/v1/orders/fiat-crypto", params, &result)
+func (c *Client) CreateFiatCryptoOrder(ctx context.Context, params *CreateFiatCryptoOrderParams) (*CreateOrderResult, error) {
+	var result CreateOrderResult
+	err := c.post(ctx, "/v2/order/fiat_to_crypto", params, &result)
 	return &result, err
 }
 
-func (c *Client) CreateCryptoFiatOrder(ctx context.Context, params *CreateCryptoFiatOrderParams) (*Order, error) {
-	var result Order
-	err := c.post(ctx, "/v1/orders/crypto-fiat", params, &result)
+func (c *Client) CreateCryptoFiatOrder(ctx context.Context, params *CreateCryptoFiatOrderParams) (*CreateOrderResult, error) {
+	var result CreateOrderResult
+	err := c.post(ctx, "/v2/order/crypto_to_fiat", params, &result)
 	return &result, err
 }
 
-func (c *Client) CreateFiatFiatOrder(ctx context.Context, params *CreateFiatFiatOrderParams) (*Order, error) {
-	var result Order
-	err := c.post(ctx, "/v1/orders/fiat-fiat", params, &result)
+func (c *Client) CreateFiatFiatOrder(ctx context.Context, params *CreateFiatFiatOrderParams) (*CreateOrderResult, error) {
+	var result CreateOrderResult
+	err := c.post(ctx, "/v2/order/fiat_to_fiat", params, &result)
 	return &result, err
 }
 
-func (c *Client) ConfirmOrder(ctx context.Context, orderID string) (*OrderConfirmation, error) {
-	var result OrderConfirmation
-	err := c.post(ctx, "/v1/orders/"+orderID+"/confirm", nil, &result)
-	return &result, err
-}
-
-func (c *Client) GetOrder(ctx context.Context, orderID string) (*Order, error) {
+func (c *Client) GetOrder(ctx context.Context, params *GetOrderParams) (*Order, error) {
+	path := "/v2/order/detail" + buildQuery(map[string]string{
+		"orderId":   strconv.FormatInt(params.OrderID, 10),
+		"orderType": params.OrderType,
+	})
 	var result Order
-	err := c.get(ctx, "/v1/orders/"+orderID, &result)
+	err := c.get(ctx, path, &result)
 	return &result, err
 }
 
 func (c *Client) ListOrders(ctx context.Context, params *ListOrdersParams) (*OrderList, error) {
 	q := map[string]string{
-		"merchantId": params.MerchantID,
-		"status":     params.Status,
-		"type":       params.Type,
-		"fromDate":   params.FromDate,
-		"toDate":     params.ToDate,
+		"orderType": params.OrderType,
+		"startTime": params.StartTime,
+		"endTime":   params.EndTime,
 	}
-	if params.Page > 0 {
-		q["page"] = strconv.Itoa(params.Page)
+	if params.CurrentPage > 0 {
+		q["currentPage"] = strconv.Itoa(params.CurrentPage)
 	}
-	if params.Limit > 0 {
-		q["limit"] = strconv.Itoa(params.Limit)
+	if params.PageSize > 0 {
+		q["pageSize"] = strconv.Itoa(params.PageSize)
 	}
-
+	if params.OrderStatus > 0 {
+		q["orderStatus"] = strconv.Itoa(params.OrderStatus)
+	}
 	var result OrderList
-	err := c.get(ctx, "/v1/orders"+buildQuery(q), &result)
-	return &result, err
-}
-
-func (c *Client) UploadInvoiceDocuments(ctx context.Context, orderID string, fileIDs []string) (*InvoiceDocuments, error) {
-	body := struct {
-		FileIDs []string `json:"fileIds"`
-	}{FileIDs: fileIDs}
-
-	var result InvoiceDocuments
-	err := c.post(ctx, "/v1/orders/"+orderID+"/invoice-documents", body, &result)
+	err := c.get(ctx, "/v2/orders"+buildQuery(q), &result)
 	return &result, err
 }

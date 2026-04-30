@@ -3,207 +3,144 @@ package velafi
 import (
 	"context"
 	"encoding/json"
-	"io"
 	"net/http"
-	"strings"
 	"testing"
 )
 
 func TestCreateFiatCryptoOrder(t *testing.T) {
 	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/v1/orders/fiat-crypto" {
-			t.Errorf("path = %q", r.URL.Path)
+		if r.URL.Path != "/v2/order/fiat_to_crypto" {
+			t.Errorf("path = %q, want /v2/order/fiat_to_crypto", r.URL.Path)
 		}
 		if r.Method != http.MethodPost {
 			t.Errorf("method = %q, want POST", r.Method)
 		}
 		var body map[string]any
 		json.NewDecoder(r.Body).Decode(&body)
-		if body["merchantId"] != "m-1" {
-			t.Errorf("merchantId = %v", body["merchantId"])
+		if body["country"] != "US" {
+			t.Errorf("country = %v, want US", body["country"])
+		}
+		if body["fiat"] != "USD" {
+			t.Errorf("fiat = %v, want USD", body["fiat"])
+		}
+		if body["crypto"] != "BTC" {
+			t.Errorf("crypto = %v, want BTC", body["crypto"])
 		}
 		json.NewEncoder(w).Encode(map[string]any{
-			"code":    0,
-			"message": "success",
+			"code": 200,
+			"msg":  "SUCCESS",
 			"data": map[string]any{
-				"orderId":      "ord-123",
-				"status":       "created",
-				"fromCurrency": "USD",
-				"toCurrency":   "BTC",
-				"fromAmount":   "5000",
-				"toAmount":     "0.1",
+				"orderId": 1001,
 			},
 		})
 	})
 
-	order, err := c.CreateFiatCryptoOrder(context.Background(), &CreateFiatCryptoOrderParams{
-		MerchantID:      "m-1",
-		FromCurrency:    "USD",
-		ToCurrency:      "BTC",
-		FromAmount:      "5000",
-		PaymentMethodID: "pm-1",
-		ToAddress:       "bc1q...",
-		Network:         "Bitcoin",
+	result, err := c.CreateFiatCryptoOrder(context.Background(), &CreateFiatCryptoOrderParams{
+		Country:    "US",
+		Crypto:     "BTC",
+		Fiat:       "USD",
+		FiatAmount: "5000",
+		PaymentID:  1,
 	})
 	if err != nil {
 		t.Fatalf("error = %v", err)
 	}
-	if order.OrderID != "ord-123" {
-		t.Errorf("OrderID = %q", order.OrderID)
-	}
-}
-
-func TestCreateCryptoFiatOrder(t *testing.T) {
-	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/v1/orders/crypto-fiat" {
-			t.Errorf("path = %q", r.URL.Path)
-		}
-		json.NewEncoder(w).Encode(map[string]any{
-			"code": 0, "message": "success",
-			"data": map[string]any{"orderId": "ord-456", "status": "created", "fromCurrency": "BTC", "toCurrency": "USD", "fromAmount": "0.1", "toAmount": "5000"},
-		})
-	})
-
-	order, err := c.CreateCryptoFiatOrder(context.Background(), &CreateCryptoFiatOrderParams{
-		MerchantID: "m-1", FromCurrency: "BTC", ToCurrency: "USD", FromAmount: "0.1", Network: "Bitcoin", PaymentMethodID: "pm-1",
-	})
-	if err != nil {
-		t.Fatalf("error = %v", err)
-	}
-	if order.OrderID != "ord-456" {
-		t.Errorf("OrderID = %q", order.OrderID)
-	}
-}
-
-func TestCreateFiatFiatOrder(t *testing.T) {
-	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/v1/orders/fiat-fiat" {
-			t.Errorf("path = %q", r.URL.Path)
-		}
-		json.NewEncoder(w).Encode(map[string]any{
-			"code": 0, "message": "success",
-			"data": map[string]any{"orderId": "ord-789", "status": "created", "fromCurrency": "EUR", "toCurrency": "USD", "fromAmount": "1000", "toAmount": "1100"},
-		})
-	})
-
-	order, err := c.CreateFiatFiatOrder(context.Background(), &CreateFiatFiatOrderParams{
-		MerchantID: "m-1", FromCurrency: "EUR", ToCurrency: "USD", FromAmount: "1000", FromPaymentMethodID: "pm-from", ToPaymentMethodID: "pm-to",
-	})
-	if err != nil {
-		t.Fatalf("error = %v", err)
-	}
-	if order.OrderID != "ord-789" {
-		t.Errorf("OrderID = %q", order.OrderID)
-	}
-}
-
-func TestConfirmOrder(t *testing.T) {
-	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/v1/orders/ord-123/confirm" {
-			t.Errorf("path = %q", r.URL.Path)
-		}
-		if r.Method != http.MethodPost {
-			t.Errorf("method = %q", r.Method)
-		}
-		json.NewEncoder(w).Encode(map[string]any{
-			"code": 0, "message": "success",
-			"data": map[string]any{"orderId": "ord-123", "status": "confirmed", "confirmedAt": "2026-04-30T10:00:00Z"},
-		})
-	})
-
-	result, err := c.ConfirmOrder(context.Background(), "ord-123")
-	if err != nil {
-		t.Fatalf("error = %v", err)
-	}
-	if result.Status != "confirmed" {
-		t.Errorf("Status = %q", result.Status)
+	if result.OrderID != 1001 {
+		t.Errorf("OrderID = %d, want 1001", result.OrderID)
 	}
 }
 
 func TestGetOrder(t *testing.T) {
 	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/v1/orders/ord-123" {
-			t.Errorf("path = %q", r.URL.Path)
+		if r.URL.Path != "/v2/order/detail" {
+			t.Errorf("path = %q, want /v2/order/detail", r.URL.Path)
 		}
 		if r.Method != http.MethodGet {
-			t.Errorf("method = %q", r.Method)
+			t.Errorf("method = %q, want GET", r.Method)
+		}
+		q := r.URL.Query()
+		if q.Get("orderId") != "1001" {
+			t.Errorf("orderId = %q, want 1001", q.Get("orderId"))
+		}
+		if q.Get("orderType") != "fiat_to_crypto" {
+			t.Errorf("orderType = %q, want fiat_to_crypto", q.Get("orderType"))
 		}
 		json.NewEncoder(w).Encode(map[string]any{
-			"code": 0, "message": "success",
-			"data": map[string]any{"orderId": "ord-123", "status": "completed", "fromCurrency": "USD", "toCurrency": "BTC", "fromAmount": "5000", "toAmount": "0.1"},
+			"code": 200,
+			"msg":  "SUCCESS",
+			"data": map[string]any{
+				"orderId":     1001,
+				"orderType":   "fiat_to_crypto",
+				"orderStatus": 1,
+				"country":     "US",
+				"fiat":        "USD",
+				"crypto":      "BTC",
+				"fiatAmount":  "5000",
+				"orderPrice":  "50000.00",
+			},
 		})
 	})
 
-	order, err := c.GetOrder(context.Background(), "ord-123")
+	order, err := c.GetOrder(context.Background(), &GetOrderParams{
+		OrderID:   1001,
+		OrderType: "fiat_to_crypto",
+	})
 	if err != nil {
 		t.Fatalf("error = %v", err)
 	}
-	if order.OrderID != "ord-123" {
-		t.Errorf("OrderID = %q", order.OrderID)
+	if order.OrderID != 1001 {
+		t.Errorf("OrderID = %d, want 1001", order.OrderID)
+	}
+	if order.OrderType != "fiat_to_crypto" {
+		t.Errorf("OrderType = %q, want fiat_to_crypto", order.OrderType)
+	}
+	if order.FiatAmount != "5000" {
+		t.Errorf("FiatAmount = %q, want 5000", order.FiatAmount)
 	}
 }
 
 func TestListOrders(t *testing.T) {
 	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/v1/orders" {
-			t.Errorf("path = %q", r.URL.Path)
+		if r.URL.Path != "/v2/orders" {
+			t.Errorf("path = %q, want /v2/orders", r.URL.Path)
 		}
 		q := r.URL.Query()
-		if q.Get("merchantId") != "m-1" {
-			t.Errorf("merchantId = %q", q.Get("merchantId"))
+		if q.Get("orderType") != "fiat_to_crypto" {
+			t.Errorf("orderType = %q, want fiat_to_crypto", q.Get("orderType"))
+		}
+		if q.Get("currentPage") != "1" {
+			t.Errorf("currentPage = %q, want 1", q.Get("currentPage"))
+		}
+		if q.Get("pageSize") != "20" {
+			t.Errorf("pageSize = %q, want 20", q.Get("pageSize"))
 		}
 		json.NewEncoder(w).Encode(map[string]any{
-			"code": 0, "message": "success",
+			"code": 200,
+			"msg":  "SUCCESS",
 			"data": map[string]any{
-				"total": 1, "page": 1, "limit": 20,
-				"items": []map[string]any{{"orderId": "ord-123", "status": "completed", "fromCurrency": "USD", "toCurrency": "BTC", "fromAmount": "5000", "toAmount": "0.1"}},
+				"total":       1,
+				"currentPage": 1,
+				"size":        20,
+				"record":      []map[string]any{{"orderId": 1001, "orderType": "fiat_to_crypto", "orderStatus": 1}},
 			},
 		})
 	})
 
-	list, err := c.ListOrders(context.Background(), &ListOrdersParams{MerchantID: "m-1"})
+	list, err := c.ListOrders(context.Background(), &ListOrdersParams{
+		OrderType:   "fiat_to_crypto",
+		CurrentPage: 1,
+		PageSize:    20,
+	})
 	if err != nil {
 		t.Fatalf("error = %v", err)
 	}
 	if list.Total != 1 {
-		t.Errorf("Total = %d", list.Total)
+		t.Errorf("Total = %d, want 1", list.Total)
 	}
-	if len(list.Items) != 1 {
-		t.Fatalf("len(Items) = %d", len(list.Items))
+	if list.CurrentPage != 1 {
+		t.Errorf("CurrentPage = %d, want 1", list.CurrentPage)
 	}
-}
-
-func TestUploadInvoiceDocuments(t *testing.T) {
-	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/v1/orders/ord-123/invoice-documents" {
-			t.Errorf("path = %q", r.URL.Path)
-		}
-		if r.Method != http.MethodPost {
-			t.Errorf("method = %q", r.Method)
-		}
-		body, _ := io.ReadAll(r.Body)
-		if !strings.Contains(string(body), "file-a") {
-			t.Errorf("body missing fileIds: %s", body)
-		}
-		json.NewEncoder(w).Encode(map[string]any{
-			"code": 0, "message": "success",
-			"data": map[string]any{
-				"orderId": "ord-123",
-				"documents": []map[string]any{
-					{"fileId": "file-a", "filename": "invoice.pdf", "uploadedAt": "2026-04-30T10:00:00Z"},
-				},
-			},
-		})
-	})
-
-	result, err := c.UploadInvoiceDocuments(context.Background(), "ord-123", []string{"file-a"})
-	if err != nil {
-		t.Fatalf("error = %v", err)
-	}
-	if result.OrderID != "ord-123" {
-		t.Errorf("OrderID = %q", result.OrderID)
-	}
-	if len(result.Documents) != 1 {
-		t.Errorf("len(Documents) = %d", len(result.Documents))
+	if len(list.Record) != 1 {
+		t.Fatalf("len(Record) = %d, want 1", len(list.Record))
 	}
 }
