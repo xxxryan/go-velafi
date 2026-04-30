@@ -13,6 +13,12 @@ func WithBaseURL(baseURL string) Option {
 	}
 }
 
+func WithSandbox() Option {
+	return func(c *Client) {
+		c.baseURL = SandboxBaseURL
+	}
+}
+
 func WithHTTPClient(httpClient *http.Client) Option {
 	return func(c *Client) {
 		c.httpClient = httpClient

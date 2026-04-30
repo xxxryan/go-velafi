@@ -11,7 +11,10 @@ import (
 	"time"
 )
 
-const defaultBaseURL = "https://api.velafi.com"
+const (
+	defaultBaseURL = "https://api.velafi.com"
+	SandboxBaseURL = "https://api-test.velafi.com"
+)
 
 type Client struct {
 	apiKey    string
@@ -40,9 +43,9 @@ func NewClient(apiKey, apiSecret string, opts ...Option) *Client {
 }
 
 type apiResponse struct {
-	Code    int             `json:"code"`
-	Message string          `json:"message"`
-	Data    json.RawMessage `json:"data"`
+	Code int             `json:"code"`
+	Msg  string          `json:"msg"`
+	Data json.RawMessage `json:"data"`
 }
 
 func (c *Client) do(ctx context.Context, method, path string, body io.Reader) (*http.Response, error) {
@@ -100,16 +103,16 @@ func (c *Client) doJSON(ctx context.Context, method, path string, body any, resu
 		return &Error{
 			HTTPStatus: resp.StatusCode,
 			Code:       apiResp.Code,
-			Message:    apiResp.Message,
+			Message:    apiResp.Msg,
 			RequestID:  resp.Header.Get("X-Request-Id"),
 		}
 	}
 
-	if apiResp.Code != 0 {
+	if apiResp.Code != 200 {
 		return &Error{
 			HTTPStatus: resp.StatusCode,
 			Code:       apiResp.Code,
-			Message:    apiResp.Message,
+			Message:    apiResp.Msg,
 			RequestID:  resp.Header.Get("X-Request-Id"),
 		}
 	}
@@ -129,10 +132,6 @@ func (c *Client) get(ctx context.Context, path string, result any) error {
 
 func (c *Client) post(ctx context.Context, path string, body any, result any) error {
 	return c.doJSON(ctx, http.MethodPost, path, body, result)
-}
-
-func (c *Client) put(ctx context.Context, path string, body any, result any) error {
-	return c.doJSON(ctx, http.MethodPut, path, body, result)
 }
 
 func (c *Client) delete(ctx context.Context, path string) error {

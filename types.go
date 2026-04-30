@@ -5,323 +5,269 @@ import "encoding/json"
 // Basic Configuration
 
 type Country struct {
-	Code string `json:"code"`
-	Name string `json:"name"`
+	Country string `json:"country"`
+	Abbr    string `json:"abbr"`
 }
 
-type Currency struct {
-	Code   string `json:"code"`
-	Name   string `json:"name"`
-	Symbol string `json:"symbol,omitempty"`
-}
-
-type Pair struct {
-	FromCurrency string `json:"fromCurrency"`
-	ToCurrency   string `json:"toCurrency"`
-}
-
-type PaymentMethodInfo struct {
-	ID       string `json:"id"`
-	Name     string `json:"name"`
-	Currency string `json:"currency"`
+type FiatCurrency struct {
 	Country  string `json:"country"`
-	Type     string `json:"type"`
+	Fiat     string `json:"fiat"`
+	Accuracy int    `json:"accuracy"`
 }
 
-// File
+type CryptoCurrency struct {
+	Crypto   string `json:"crypto"`
+	Accuracy int    `json:"accuracy"`
+}
+
+type BuySellSymbol struct {
+	Country  string `json:"country"`
+	Fiat     string `json:"fiat"`
+	Crypto   string `json:"crypto"`
+	Accuracy int    `json:"accuracy"`
+}
+
+type FiatFiatSymbol struct {
+	OnRampCountry  string `json:"onRampCountry"`
+	OnRampFiat     string `json:"onRampFiat"`
+	OffRampCountry string `json:"offRampCountry"`
+	OffRampFiat    string `json:"offRampFiat"`
+	Accuracy       int    `json:"accuracy"`
+}
+
+type PaymentOption struct {
+	PaymentID   int    `json:"paymentId"`
+	FiatFee     string `json:"fiatFee"`
+	PaymentType int    `json:"paymentType"`
+	Trench      string `json:"trench,omitempty"`
+}
+
+type BuySellPayments struct {
+	Country     string          `json:"country"`
+	Fiat        string          `json:"fiat"`
+	Crypto      string          `json:"crypto"`
+	PaymentList []PaymentOption `json:"paymentList"`
+}
+
+type FiatFiatPayments struct {
+	OnRampCountry   string          `json:"onRampCountry"`
+	OnRampFiat      string          `json:"onRampFiat"`
+	OffRampCountry  string          `json:"offRampCountry"`
+	OffRampFiat     string          `json:"offRampFiat"`
+	PaymentListFrom []PaymentOption `json:"paymentListFrom"`
+	PaymentListTo   []PaymentOption `json:"paymentListTo"`
+}
+
+// File Upload
 
 type UploadFileParams struct {
-	FilePath string
-	Purpose  string // "id_document", "selfie", "business_document"
+	BusinessType string
+	FilePaths    []string
 }
 
-type File struct {
-	FileID    string `json:"fileId"`
-	Filename  string `json:"filename"`
-	Purpose   string `json:"purpose"`
-	Size      int64  `json:"size"`
-	CreatedAt string `json:"createdAt"`
+type UploadedFile struct {
+	FileName    string `json:"fileName"`
+	FileType    string `json:"fileType"`
+	FileURL     string `json:"fileUrl"`
+	TempFileURL string `json:"tempFileUrl"`
 }
 
 // Quote
 
-type CryptoFiatQuoteParams struct {
-	MerchantID      string `json:"merchantId"`
-	FromCurrency    string `json:"fromCurrency"`
-	ToCurrency      string `json:"toCurrency"`
-	FromAmount      string `json:"fromAmount,omitempty"`
-	ToAmount        string `json:"toAmount,omitempty"`
-	PaymentMethodID string `json:"paymentMethodId"`
+type CryptoQuoteParams struct {
+	Country       string
+	From          string
+	To            string
+	CreateQuoteID bool
 }
 
-type FiatFiatQuoteParams struct {
-	MerchantID          string `json:"merchantId"`
-	FromCurrency        string `json:"fromCurrency"`
-	ToCurrency          string `json:"toCurrency"`
-	FromAmount          string `json:"fromAmount,omitempty"`
-	ToAmount            string `json:"toAmount,omitempty"`
-	FromPaymentMethodID string `json:"fromPaymentMethodId"`
-	ToPaymentMethodID   string `json:"toPaymentMethodId"`
+type FiatQuoteParams struct {
+	OnRampCountry  string
+	OnRampFiat     string
+	OffRampCountry string
+	OffRampFiat    string
+	CreateQuoteID  bool
 }
 
 type Quote struct {
-	QuoteID      string `json:"quoteId"`
-	FromCurrency string `json:"fromCurrency"`
-	ToCurrency   string `json:"toCurrency"`
-	FromAmount   string `json:"fromAmount"`
-	ToAmount     string `json:"toAmount"`
-	ExchangeRate string `json:"exchangeRate"`
-	Fee          string `json:"fee"`
-	ExpiredAt    string `json:"expiredAt"`
+	Price   string `json:"price"`
+	QuoteID string `json:"quoteId,omitempty"`
 }
 
 // Order
 
 type CreateFiatCryptoOrderParams struct {
-	MerchantID      string `json:"merchantId"`
-	FromCurrency    string `json:"fromCurrency"`
-	ToCurrency      string `json:"toCurrency"`
-	FromAmount      string `json:"fromAmount,omitempty"`
-	ToAmount        string `json:"toAmount,omitempty"`
-	PaymentMethodID string `json:"paymentMethodId"`
-	ToAddress       string `json:"toAddress"`
-	Network         string `json:"network"`
-	QuoteID         string `json:"quoteId,omitempty"`
-	ClientOrderID   string `json:"clientOrderId,omitempty"`
-	Memo            string `json:"memo,omitempty"`
+	Country      string `json:"country"`
+	Crypto       string `json:"crypto"`
+	Fiat         string `json:"fiat"`
+	FiatAmount   string `json:"fiatAmount"`
+	PaymentID    int    `json:"paymentId"`
+	ClientID     string `json:"clientId,omitempty"`
+	MerchantID   int    `json:"merchantId,omitempty"`
+	Remark       string `json:"remark,omitempty"`
+	DepositAlias string `json:"depositAlias,omitempty"`
+	QuoteID      string `json:"quoteId,omitempty"`
 }
 
 type CreateCryptoFiatOrderParams struct {
-	MerchantID      string `json:"merchantId"`
-	FromCurrency    string `json:"fromCurrency"`
-	ToCurrency      string `json:"toCurrency"`
-	FromAmount      string `json:"fromAmount,omitempty"`
-	ToAmount        string `json:"toAmount,omitempty"`
-	Network         string `json:"network"`
-	PaymentMethodID string `json:"paymentMethodId"`
-	QuoteID         string `json:"quoteId,omitempty"`
-	ClientOrderID   string `json:"clientOrderId,omitempty"`
+	Country       string `json:"country"`
+	Crypto        string `json:"crypto"`
+	Fiat          string `json:"fiat"`
+	CryptoAmount  string `json:"cryptoAmount"`
+	UserPaymentID int    `json:"userPaymentId"`
+	ClientID      string `json:"clientId,omitempty"`
+	MerchantID    int    `json:"merchantId,omitempty"`
+	Remark        string `json:"remark,omitempty"`
+	QuoteID       string `json:"quoteId,omitempty"`
 }
 
 type CreateFiatFiatOrderParams struct {
-	MerchantID          string `json:"merchantId"`
-	FromCurrency        string `json:"fromCurrency"`
-	ToCurrency          string `json:"toCurrency"`
-	FromAmount          string `json:"fromAmount,omitempty"`
-	ToAmount            string `json:"toAmount,omitempty"`
-	FromPaymentMethodID string `json:"fromPaymentMethodId"`
-	ToPaymentMethodID   string `json:"toPaymentMethodId"`
-	QuoteID             string `json:"quoteId,omitempty"`
-	ClientOrderID       string `json:"clientOrderId,omitempty"`
+	ClientID          string `json:"clientId,omitempty"`
+	OnRampCountry     string `json:"onRampCountry"`
+	OnRampMerchantID  int    `json:"onRampMerchantId,omitempty"`
+	OnRampFiat        string `json:"onRampFiat"`
+	OnRampFiatAmount  string `json:"onRampFiatAmount"`
+	OnRampPaymentID   int    `json:"onRampPaymentId"`
+	DepositAlias      string `json:"depositAlias,omitempty"`
+	OffRampCountry    string `json:"offRampCountry"`
+	OffRampMerchantID int    `json:"offRampMerchantId,omitempty"`
+	OffRampFiat       string `json:"offRampFiat"`
+	OffRampPaymentID  int    `json:"offRampPaymentId"`
+	Remark            string `json:"remark,omitempty"`
+	QuoteID           string `json:"quoteId,omitempty"`
+}
+
+type CreateOrderResult struct {
+	OrderID int64 `json:"orderId"`
+}
+
+type GetOrderParams struct {
+	OrderID   int64
+	OrderType string // fiat_to_crypto, crypto_to_fiat, fiat_to_fiat
 }
 
 type Order struct {
-	OrderID             string `json:"orderId"`
-	ClientOrderID       string `json:"clientOrderId,omitempty"`
-	MerchantID          string `json:"merchantId,omitempty"`
-	Type                string `json:"type,omitempty"`
-	Status              string `json:"status"`
-	FromCurrency        string `json:"fromCurrency"`
-	ToCurrency          string `json:"toCurrency"`
-	FromAmount          string `json:"fromAmount"`
-	ToAmount            string `json:"toAmount"`
-	ExchangeRate        string `json:"exchangeRate,omitempty"`
-	Fee                 string `json:"fee,omitempty"`
-	PaymentMethodID     string `json:"paymentMethodId,omitempty"`
-	ToAddress           string `json:"toAddress,omitempty"`
-	DepositAddress      string `json:"depositAddress,omitempty"`
-	Network             string `json:"network,omitempty"`
-	FromPaymentMethodID string `json:"fromPaymentMethodId,omitempty"`
-	ToPaymentMethodID   string `json:"toPaymentMethodId,omitempty"`
-	CreatedAt           string `json:"createdAt,omitempty"`
-	UpdatedAt           string `json:"updatedAt,omitempty"`
-}
-
-type OrderConfirmation struct {
-	OrderID     string `json:"orderId"`
-	Status      string `json:"status"`
-	ConfirmedAt string `json:"confirmedAt"`
+	OrderID       int64           `json:"orderId"`
+	ClientID      string          `json:"clientId,omitempty"`
+	MerchantID    int             `json:"merchantId,omitempty"`
+	PaymentID     int             `json:"paymentId,omitempty"`
+	UserPaymentID int             `json:"userPaymentId,omitempty"`
+	Country       string          `json:"country,omitempty"`
+	Crypto        string          `json:"crypto,omitempty"`
+	Fiat          string          `json:"fiat,omitempty"`
+	OrderType     string          `json:"orderType"`
+	OrderPrice    string          `json:"orderPrice,omitempty"`
+	CryptoAmount  string          `json:"cryptoAmount,omitempty"`
+	FiatAmount    string          `json:"fiatAmount,omitempty"`
+	FiatFee       string          `json:"fiatFee,omitempty"`
+	OrderStatus   int             `json:"orderStatus"`
+	TraceNumber   string          `json:"traceNumber,omitempty"`
+	PaymentInfo   json.RawMessage `json:"paymentInfo,omitempty"`
+	FailCode      string          `json:"failCode,omitempty"`
+	FailReason    string          `json:"failReason,omitempty"`
+	CreateTime    int64           `json:"createTime,omitempty"`
+	CompletedTime int64           `json:"completedTime,omitempty"`
 }
 
 type ListOrdersParams struct {
-	MerchantID string `json:"merchantId"`
-	Status     string `json:"status,omitempty"`
-	Type       string `json:"type,omitempty"`
-	FromDate   string `json:"fromDate,omitempty"`
-	ToDate     string `json:"toDate,omitempty"`
-	Page       int    `json:"page,omitempty"`
-	Limit      int    `json:"limit,omitempty"`
+	CurrentPage int
+	PageSize    int
+	StartTime   string
+	EndTime     string
+	OrderType   string
+	OrderStatus int
 }
 
 type OrderList struct {
-	Total int      `json:"total"`
-	Page  int      `json:"page"`
-	Limit int      `json:"limit"`
-	Items []*Order `json:"items"`
-}
-
-type InvoiceDocuments struct {
-	OrderID   string            `json:"orderId"`
-	Documents []InvoiceDocument `json:"documents"`
-}
-
-type InvoiceDocument struct {
-	FileID     string `json:"fileId"`
-	Filename   string `json:"filename"`
-	UploadedAt string `json:"uploadedAt"`
+	Size        int               `json:"size"`
+	CurrentPage int               `json:"currentPage"`
+	Total       int               `json:"total"`
+	Record      []json.RawMessage `json:"record"`
 }
 
 // Payment Method
 
-type ListPaymentTemplatesParams struct {
-	Currency string `json:"currency,omitempty"`
-	Country  string `json:"country,omitempty"`
-	Type     string `json:"type,omitempty"`
-}
-
-type PaymentTemplate struct {
-	TemplateID string                 `json:"templateId"`
-	Name       string                 `json:"name"`
-	Currency   string                 `json:"currency"`
-	Country    string                 `json:"country"`
-	Type       string                 `json:"type"`
-	Fields     []PaymentTemplateField `json:"fields"`
-}
-
-type PaymentTemplateField struct {
-	Key      string `json:"key"`
-	Label    string `json:"label"`
-	Type     string `json:"type"`
-	Required bool   `json:"required"`
-}
-
-type PaymentTemplateMetamessage struct {
-	TemplateID  string `json:"templateId"`
-	Metamessage struct {
-		Fields []PaymentTemplateMetaField `json:"fields"`
-	} `json:"metamessage"`
-}
+type PaymentTemplate map[string]string
 
 type PaymentTemplateMetaField struct {
-	Key        string `json:"key"`
-	Label      string `json:"label"`
-	Type       string `json:"type"`
-	Required   bool   `json:"required"`
-	Validation *struct {
-		Pattern   string `json:"pattern,omitempty"`
-		MinLength int    `json:"minLength,omitempty"`
-		MaxLength int    `json:"maxLength,omitempty"`
-	} `json:"validation,omitempty"`
+	Index      int    `json:"index"`
+	IndexCode  string `json:"indexCode"`
+	TextType   int    `json:"textType"`
+	Title      string `json:"title"`
+	PromptText string `json:"promptText"`
+	MinLimit   int    `json:"minLimit"`
+	MaxLimit   int    `json:"maxLimit"`
+	IsOptional bool   `json:"isOptional"`
+	IsAccount  bool   `json:"isAccount"`
+	ExtendInfo string `json:"extendInfo,omitempty"`
+}
+
+type PaymentTemplateMeta struct {
+	ID          int                        `json:"id"`
+	PaymentName string                     `json:"paymentName"`
+	PaymentType int                        `json:"paymentType"`
+	Trench      string                     `json:"trench"`
+	FieldList   []PaymentTemplateMetaField `json:"fieldList"`
 }
 
 type AddPaymentMethodParams struct {
-	MerchantID string         `json:"merchantId"`
-	TemplateID string         `json:"templateId"`
-	Fields     map[string]any `json:"fields"`
+	MerchantID int            `json:"merchantId"`
+	PaymentID  int            `json:"paymentId"`
+	Country    string         `json:"country"`
+	Fiat       string         `json:"fiat"`
+	RealName   string         `json:"realName"`
+	FieldJSON  map[string]any `json:"fieldJson"`
+	Remark     string         `json:"remark,omitempty"`
+}
+
+type AddPaymentMethodResult struct {
+	ID         int    `json:"id"`
+	Status     int    `json:"status"`
+	FailReason string `json:"failReason,omitempty"`
+}
+
+type ListPaymentMethodsParams struct {
+	Country     string
+	Status      int
+	Fiat        string
+	MerchantID  int
+	CurrentPage int
+	PageSize    int
 }
 
 type PaymentMethod struct {
-	MethodID       string          `json:"methodId"`
-	MerchantID     string          `json:"merchantId"`
-	TemplateID     string          `json:"templateId"`
-	Status         string          `json:"status"`
-	Fields         json.RawMessage `json:"fields"`
-	RefundMethodID string          `json:"refundMethodId,omitempty"`
-	CreatedAt      string          `json:"createdAt"`
+	ID                int               `json:"id"`
+	MerchantID        int               `json:"merchantId"`
+	Country           string            `json:"country"`
+	Fiat              string            `json:"fiat"`
+	PaymentID         int               `json:"paymentId"`
+	PaymentMethodName string            `json:"paymentMethodName"`
+	RealName          string            `json:"realName"`
+	Status            int               `json:"status"`
+	HasRefundAccount  int               `json:"hasRefundAccount"`
+	FieldList         map[string]string `json:"fieldList"`
+	Remark            string            `json:"remark,omitempty"`
+	CreateTime        int64             `json:"createTime"`
 }
 
-type RefundAccountResult struct {
-	MethodID       string `json:"methodId"`
-	RefundMethodID string `json:"refundMethodId"`
-	UpdatedAt      string `json:"updatedAt"`
+type PaymentMethodList struct {
+	CurrentPage int             `json:"currentPage"`
+	Size        int             `json:"size"`
+	Total       int             `json:"total"`
+	Record      []PaymentMethod `json:"record"`
 }
 
 // Webhook
 
 type CreateWebhookParams struct {
-	URL        string   `json:"url"`
-	Events     []string `json:"events"`
-	Secret     string   `json:"secret,omitempty"`
-	MerchantID string   `json:"merchantId"`
-}
-
-type UpdateWebhookParams struct {
-	URL    string   `json:"url,omitempty"`
-	Events []string `json:"events,omitempty"`
-	Secret string   `json:"secret,omitempty"`
-	Status string   `json:"status,omitempty"`
+	EventType string `json:"eventType"`
+	URL       string `json:"url"`
 }
 
 type Webhook struct {
-	WebhookID  string   `json:"webhookId"`
-	URL        string   `json:"url"`
-	Events     []string `json:"events"`
-	MerchantID string   `json:"merchantId"`
-	Status     string   `json:"status"`
-	CreatedAt  string   `json:"createdAt,omitempty"`
-	UpdatedAt  string   `json:"updatedAt,omitempty"`
-}
-
-// Webhook Events (inbound payloads)
-
-type FiatCryptoOrderEvent struct {
-	OrderID       string `json:"orderId"`
-	ClientOrderID string `json:"clientOrderId"`
-	MerchantID    string `json:"merchantId"`
-	Type          string `json:"type"`
-	Status        string `json:"status"`
-	FromCurrency  string `json:"fromCurrency"`
-	ToCurrency    string `json:"toCurrency"`
-	FromAmount    string `json:"fromAmount"`
-	ToAmount      string `json:"toAmount"`
-	ExchangeRate  string `json:"exchangeRate"`
-	Fee           string `json:"fee"`
-	ToAddress     string `json:"toAddress"`
-	TxHash        string `json:"txHash"`
-	Network       string `json:"network"`
-	CreatedAt     string `json:"createdAt"`
-	CompletedAt   string `json:"completedAt"`
-}
-
-type FiatFiatOrderEvent struct {
-	OrderID             string `json:"orderId"`
-	ClientOrderID       string `json:"clientOrderId"`
-	MerchantID          string `json:"merchantId"`
-	Type                string `json:"type"`
-	Status              string `json:"status"`
-	FromCurrency        string `json:"fromCurrency"`
-	ToCurrency          string `json:"toCurrency"`
-	FromAmount          string `json:"fromAmount"`
-	ToAmount            string `json:"toAmount"`
-	ExchangeRate        string `json:"exchangeRate"`
-	Fee                 string `json:"fee"`
-	FromPaymentMethodID string `json:"fromPaymentMethodId"`
-	ToPaymentMethodID   string `json:"toPaymentMethodId"`
-	CreatedAt           string `json:"createdAt"`
-	CompletedAt         string `json:"completedAt"`
-}
-
-type FundingRecordEvent struct {
-	FundingID     string `json:"fundingId"`
-	MerchantID    string `json:"merchantId"`
-	Currency      string `json:"currency"`
-	Amount        string `json:"amount"`
-	Status        string `json:"status"`
-	AccountNumber string `json:"accountNumber"`
-	Reference     string `json:"reference"`
-	CreatedAt     string `json:"createdAt"`
-}
-
-type StablecoinPaymentEvent struct {
-	PaymentID   string `json:"paymentId"`
-	MerchantID  string `json:"merchantId"`
-	Currency    string `json:"currency"`
-	Network     string `json:"network"`
-	Amount      string `json:"amount"`
-	FromAddress string `json:"fromAddress"`
-	ToAddress   string `json:"toAddress"`
-	TxHash      string `json:"txHash"`
-	Status      string `json:"status"`
-	CreatedAt   string `json:"createdAt"`
-	CompletedAt string `json:"completedAt"`
+	WebhookID string `json:"webhookId"`
+	EventType string `json:"eventType"`
+	URL       string `json:"url"`
+	Status    int    `json:"status"`
+	PublicKey string `json:"publicKey,omitempty"`
 }
