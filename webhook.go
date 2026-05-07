@@ -20,3 +20,9 @@ func (c *Client) ListWebhooks(ctx context.Context, status int) ([]Webhook, error
 	err := c.get(ctx, "/v2/webhooks"+buildQuery(q), &result)
 	return result, err
 }
+
+func (c *Client) UpdateWebhook(ctx context.Context, webhookID string, params *UpdateWebhookParams) (*Webhook, error) {
+	var result Webhook
+	err := c.put(ctx, "/v2/webhook/"+webhookID, params, &result)
+	return &result, err
+}

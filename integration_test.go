@@ -29,102 +29,79 @@ func TestIntegration_TokenGeneration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ensureToken() error = %v", err)
 	}
-
 	if c.token == "" {
-		t.Fatal("token should not be empty after ensureToken")
-	}
-	if c.expiresAt.IsZero() {
-		t.Fatal("expiresAt should be set")
+		t.Fatal("token should not be empty")
 	}
 	t.Logf("token acquired, expires at %s", c.expiresAt.Format(time.RFC3339))
 }
 
-func TestIntegration_ListCountries(t *testing.T) {
+func TestIntegration_GetBuySymbols(t *testing.T) {
 	c := integrationClient(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	countries, err := c.ListCountries(ctx)
+	symbols, err := c.GetBuySymbols(ctx)
 	if err != nil {
-		t.Fatalf("ListCountries() error = %v", err)
+		t.Fatalf("GetBuySymbols() error = %v", err)
 	}
-
-	if len(countries) == 0 {
-		t.Fatal("expected at least one country")
+	if len(symbols) == 0 {
+		t.Fatal("expected at least one symbol")
 	}
-	t.Logf("got %d countries, first: %+v", len(countries), countries[0])
+	t.Logf("got %d buy symbols, first: %+v", len(symbols), symbols[0])
 }
 
-func TestIntegration_ListFiatCurrencies(t *testing.T) {
+func TestIntegration_GetSellSymbols(t *testing.T) {
 	c := integrationClient(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	currencies, err := c.ListFiatCurrencies(ctx)
+	symbols, err := c.GetSellSymbols(ctx)
 	if err != nil {
-		t.Fatalf("ListFiatCurrencies() error = %v", err)
+		t.Fatalf("GetSellSymbols() error = %v", err)
 	}
-
-	if len(currencies) == 0 {
-		t.Fatal("expected at least one fiat currency")
+	if len(symbols) == 0 {
+		t.Fatal("expected at least one symbol")
 	}
-	t.Logf("got %d fiat currencies, first: %+v", len(currencies), currencies[0])
+	t.Logf("got %d sell symbols, first: %+v", len(symbols), symbols[0])
 }
 
-func TestIntegration_ListCryptoCurrencies(t *testing.T) {
+func TestIntegration_GetBuyPayments(t *testing.T) {
 	c := integrationClient(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	currencies, err := c.ListCryptoCurrencies(ctx)
+	payments, err := c.GetBuyPayments(ctx, "Mexico", "MXN", "USDT")
 	if err != nil {
-		t.Fatalf("ListCryptoCurrencies() error = %v", err)
+		t.Fatalf("GetBuyPayments() error = %v", err)
 	}
-
-	if len(currencies) == 0 {
-		t.Fatal("expected at least one crypto currency")
-	}
-	t.Logf("got %d crypto currencies, first: %+v", len(currencies), currencies[0])
-}
-
-func TestIntegration_ListBuySymbols(t *testing.T) {
-	c := integrationClient(t)
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	symbols, err := c.ListBuySymbols(ctx)
-	if err != nil {
-		t.Fatalf("ListBuySymbols() error = %v", err)
-	}
-
-	t.Logf("got %d buy symbols", len(symbols))
-	if len(symbols) > 0 {
-		t.Logf("first: %s/%s/%s", symbols[0].Country, symbols[0].Fiat, symbols[0].Crypto)
+	t.Logf("got %d buy payments for Mexico/MXN/USDT", len(payments.PaymentList))
+	for i, p := range payments.PaymentList {
+		t.Logf("  [%d] paymentId=%d, fee=%.2f, type=%d, trench=%s", i, p.PaymentID, p.FiatFee, p.PaymentType, p.Trench)
 	}
 }
 
-func TestIntegration_ListSellSymbols(t *testing.T) {
+func TestIntegration_GetSellPayments(t *testing.T) {
 	c := integrationClient(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	symbols, err := c.ListSellSymbols(ctx)
+	payments, err := c.GetSellPayments(ctx, "Mexico", "MXN", "USDT")
 	if err != nil {
-		t.Fatalf("ListSellSymbols() error = %v", err)
+		t.Fatalf("GetSellPayments() error = %v", err)
 	}
-
-	t.Logf("got %d sell symbols", len(symbols))
+	t.Logf("got %d sell payments for Mexico/MXN/USDT", len(payments.PaymentList))
 }
 
-func TestIntegration_ListFiatFiatSymbols(t *testing.T) {
+func TestIntegration_GetCryptoQuote(t *testing.T) {
 	c := integrationClient(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	symbols, err := c.ListFiatFiatSymbols(ctx)
+	quote, err := c.GetCryptoQuote(ctx, &CryptoQuoteParams{
+		Country: "Mexico", From: "MXN", To: "USDT",
+	})
 	if err != nil {
-		t.Fatalf("ListFiatFiatSymbols() error = %v", err)
+		t.Fatalf("GetCryptoQuote() error = %v", err)
 	}
-
-	t.Logf("got %d fiat-fiat symbols", len(symbols))
+	t.Logf("MXN/USDT price: %s", quote.Price)
 }

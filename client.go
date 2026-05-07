@@ -134,6 +134,11 @@ func (c *Client) post(ctx context.Context, path string, body any, result any) er
 	return c.doJSON(ctx, http.MethodPost, path, body, result)
 }
 
+func (c *Client) put(ctx context.Context, path string, body any, result any) error {
+	return c.doJSON(ctx, http.MethodPut, path, body, result)
+}
+
 func (c *Client) delete(ctx context.Context, path string) error {
 	return c.doJSON(ctx, http.MethodDelete, path, nil, nil)
 }
+

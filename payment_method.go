@@ -14,18 +14,18 @@ func (c *Client) GetPaymentTemplate(ctx context.Context, paymentID int) (Payment
 	return result, err
 }
 
+func (c *Client) AddPaymentMethod(ctx context.Context, params *AddPaymentMethodParams) (*AddPaymentMethodResult, error) {
+	var result AddPaymentMethodResult
+	err := c.post(ctx, "/v2/payments", params, &result)
+	return &result, err
+}
+
 func (c *Client) GetPaymentTemplateMeta(ctx context.Context, paymentID int) (*PaymentTemplateMeta, error) {
 	path := "/v2/payments/templates/metamessage" + buildQuery(map[string]string{
 		"paymentId": strconv.Itoa(paymentID),
 	})
 	var result PaymentTemplateMeta
 	err := c.get(ctx, path, &result)
-	return &result, err
-}
-
-func (c *Client) AddPaymentMethod(ctx context.Context, params *AddPaymentMethodParams) (*AddPaymentMethodResult, error) {
-	var result AddPaymentMethodResult
-	err := c.post(ctx, "/v2/payments", params, &result)
 	return &result, err
 }
 
@@ -53,4 +53,8 @@ func (c *Client) ListPaymentMethods(ctx context.Context, params *ListPaymentMeth
 
 func (c *Client) DeletePaymentMethod(ctx context.Context, userPaymentID int) error {
 	return c.delete(ctx, "/v2/payments/"+strconv.Itoa(userPaymentID))
+}
+
+func (c *Client) SetRefundAccount(ctx context.Context, params *SetRefundAccountParams) error {
+	return c.post(ctx, "/openapi/v2/payment/refund_account", params, nil)
 }
