@@ -125,3 +125,6 @@ go.work.sum
 
 .claude/
 docs/superpowers/
+
+tmp/
+bin/

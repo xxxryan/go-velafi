@@ -2,7 +2,7 @@
 
 Go SDK for the [VelaFi](https://docs.velafi.com) v2 API — on-ramp/off-ramp cryptocurrency operations.
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/xfinancial/go-velafi.svg)](https://pkg.go.dev/github.com/xfinancial/go-velafi)
+[![Go Reference](https://pkg.go.dev/badge/github.com/xxxryan/go-velafi.svg)](https://pkg.go.dev/github.com/xxxryan/go-velafi)
 
 ## Features
 
@@ -15,10 +15,10 @@ Go SDK for the [VelaFi](https://docs.velafi.com) v2 API — on-ramp/off-ramp cry
 ## Installation
 
 ```bash
-go get github.com/xfinancial/go-velafi
+go get github.com/xxxryan/go-velafi
 ```
 
-Requires Go 1.22+
+Requires Go 1.26+
 
 ## Quick Start
 
@@ -30,7 +30,7 @@ import (
     "fmt"
     "log"
 
-    velafi "github.com/xfinancial/go-velafi"
+    velafi "github.com/xxxryan/go-velafi"
 )
 
 func main() {
@@ -208,7 +208,7 @@ import (
     "fmt"
     "log"
 
-    velafi "github.com/xfinancial/go-velafi"
+    velafi "github.com/xxxryan/go-velafi"
 )
 
 // Step 1: Get available payment methods for MXN → USDT
